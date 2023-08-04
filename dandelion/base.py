@@ -18,8 +18,8 @@ class DandelionConfig(dict):
     ALLOWED_KEYS = ['token', 'app_id', 'app_key']
 
     def __setitem__(self, key, value):
-        if not key in self.ALLOWED_KEYS:
-            raise DandelionException('invalid config param: {}'.format(key))
+        if key not in self.ALLOWED_KEYS:
+            raise DandelionException(f'invalid config param: {key}')
         super(DandelionConfig, self).__setitem__(key, value)
 
 
@@ -32,7 +32,7 @@ class DandelionException(Exception):
             self.code = dandelion_obj.code
             self.data = dandelion_obj.data
         else:
-            self.message = "{}".format(dandelion_obj)
+            self.message = f"{dandelion_obj}"
             self.code = kwargs.get('code')
             self.data = kwargs.get('data')
         super(DandelionException, self).__init__(self.message)
@@ -44,7 +44,7 @@ class MissingParameterException(DandelionException):
     def __init__(self, param_name):
         self.data = {'parameter': param_name}
         super(MissingParameterException, self).__init__(
-            'Param "{}" is required'.format(param_name)
+            f'Param "{param_name}" is required'
         )
 
 
@@ -63,11 +63,11 @@ class BaseDandelionRequest(object):
         self.cache = kwargs.get('cache', NoCache())
 
         if self.REQUIRE_AUTH and not self.token:
-            if self.app_id or self.app_key:
-                if self.REQUIRE_AUTH and not self.app_id:
-                    raise MissingParameterException("app_id")
-                if self.REQUIRE_AUTH and not self.app_key:
+            if self.app_id:
+                if not self.app_key:
                     raise MissingParameterException("app_key")
+            elif self.app_key:
+                raise MissingParameterException("app_id")
             else:
                 raise MissingParameterException("token")
 
@@ -80,7 +80,7 @@ class BaseDandelionRequest(object):
                 params['$app_id'] = self.app_id
                 params['$app_key'] = self.app_key
 
-        url = self.uri + ''.join('/' + x for x in extra_url)
+        url = self.uri + ''.join(f'/{x}' for x in extra_url)
 
         cache_key = self.cache.get_key_for(
             url=url, params=params, method=method
@@ -105,7 +105,7 @@ class BaseDandelionRequest(object):
     def _get_uri(self, host=None):
         base_uri = host or self.DANDELION_HOST
         if not base_uri.startswith('http'):
-            base_uri = 'https://' + base_uri
+            base_uri = f'https://{base_uri}'
         return urlparse.urljoin(
             base_uri, '/'.join(self._get_uri_tokens())
         )
@@ -116,7 +116,7 @@ class BaseDandelionRequest(object):
         kwargs['url'] = url
         kwargs['headers'] = kwargs.pop('headers', {})
         kwargs['headers']['User-Agent'] = kwargs['headers'].get(
-            'User-Agent', 'python-dandelion-eu/' + __version__
+            'User-Agent', f'python-dandelion-eu/{__version__}'
         )
         return getattr(self.requests, method)(**kwargs)
 

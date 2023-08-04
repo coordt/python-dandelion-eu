@@ -13,10 +13,10 @@ class NoCache(object):
 
     @classmethod
     def _key_for_map(cls, map):
-        input_s = ''
-        for key in sorted(map):
-            input_s += u'{}={},'.format(key, cls._key_for_map(map[key]) if isinstance(map[key], dict) else map[key])
-        return input_s
+        return ''.join(
+            f'{key}={cls._key_for_map(map[key]) if isinstance(map[key], dict) else map[key]},'
+            for key in sorted(map)
+        )
 
     @classmethod
     def get_key_for(cls, **kwargs):

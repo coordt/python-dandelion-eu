@@ -19,7 +19,7 @@ class TestDatagemBase(TestCase):
 
     @staticmethod
     def _achene(achene_id):
-        return 'http://dandelion.eu/resource/{}'.format(achene_id)
+        return f'http://dandelion.eu/resource/{achene_id}'
 
 
 @unittest.skip("Datagem seems not supported on Dandelion anymore")
@@ -208,8 +208,7 @@ class TestDatagem(TestDatagemBase):
             with self.assertRaises(TypeError) as context:
                 list(self.datagem.items[the_slice])
             self.assertEqual(
-                str(context.exception),
-                "Invalid slice type: {}".format(type(the_slice))
+                str(context.exception), f"Invalid slice type: {type(the_slice)}"
             )
 
         for the_slice in [slice(-1), slice(0, -1), slice(-1, None)]:
