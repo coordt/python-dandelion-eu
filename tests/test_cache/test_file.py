@@ -4,11 +4,10 @@ from shutil import rmtree
 from unittest import TestCase
 
 from dandelion.cache import FileCache
-from .base import CacheBaseMixin, FakeDandelionRequest
+from .test_base import CacheBaseMixin, FakeDandelionRequest
 
 
 class TestFileCache(CacheBaseMixin, TestCase):
-
     def setUp(self):
         self.cache_dir = mkdtemp()
         self.req_obj = FakeDandelionRequest(cache=FileCache(self.cache_dir))
@@ -18,10 +17,9 @@ class TestFileCache(CacheBaseMixin, TestCase):
 
 
 class TestFileCacheNonExistingDir(CacheBaseMixin, TestCase):
-
     def setUp(self):
         self.cache_root = mkdtemp()
-        self.cache_dir = os.path.join(self.cache_root, 'subdirectory')
+        self.cache_dir = os.path.join(self.cache_root, "subdirectory")
         self.req_obj = FakeDandelionRequest(cache=FileCache(self.cache_dir))
 
     def tearDown(self):

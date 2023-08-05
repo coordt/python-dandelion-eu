@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import os
 from unittest import TestCase
 
@@ -8,27 +6,30 @@ from dandelion import DataTXT, default_config, DandelionException
 
 class TestDatatxt(TestCase):
     def setUp(self):
-        default_config['app_id'] = os.environ['APP_ID']
-        default_config['app_key'] = os.environ['APP_KEY']
+        default_config["app_id"] = os.environ.get("APP_ID")
+        default_config["app_key"] = os.environ.get("APP_KEY")
+        default_config["token"] = os.environ.get("TOKEN")
         self.datatxt = DataTXT()
 
     def test_nex(self):
-        res = self.datatxt.nex('They say Apple is better than Windows')
+        res = self.datatxt.nex("They say Apple is better than Windows")
         self.assertEqual(
             {annotation.uri for annotation in res.annotations},
-            {'http://en.wikipedia.org/wiki/Apple_Inc.',
-             'http://en.wikipedia.org/wiki/Microsoft_Windows'}
+            {
+                "http://en.wikipedia.org/wiki/Apple_Inc.",
+                "http://en.wikipedia.org/wiki/Microsoft_Windows",
+            },
         )
 
     def test_sim(self):
         res = self.datatxt.sim(
             'Reports that the NSA eavesdropped on world leaders have "severely'
             ' shaken" relations between Europe and the U.S., German Chancellor'
-            ' Angela Merkel said.',
+            " Angela Merkel said.",
             # --
-            'Germany and France are to seek talks with the US to settle a row '
-            'over spying, as espionage claims continue to overshadow an EU '
-            'summit in Brussels.'
+            "Germany and France are to seek talks with the US to settle a row "
+            "over spying, as espionage claims continue to overshadow an EU "
+            "summit in Brussels.",
         )
 
         self.assertGreater(res.similarity, 0.5)
@@ -36,10 +37,7 @@ class TestDatatxt(TestCase):
     def test_li(self):
         res = self.datatxt.li("Le nostre tre M sono: mafia, mamma, mandolino")
 
-        self.assertEqual(
-            [entry.lang for entry in res.detectedLangs],
-            ['it']
-        )
+        self.assertEqual([entry.lang for entry in res.detectedLangs], ["it"])
 
         self.assertGreater(res.detectedLangs[0].confidence, 0.9999)
 

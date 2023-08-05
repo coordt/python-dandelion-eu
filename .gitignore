@@ -40,3 +40,4 @@ htmlcov
 coverage.xml
 
 docs/_build
+.env
