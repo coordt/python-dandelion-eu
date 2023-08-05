@@ -84,13 +84,15 @@ class TestBaseClass(TestCase):
 
     @staticmethod
     def _make_class(require_auth=True, implement_abstract=False):
+
+
+
         class TestClass(BaseDandelionRequest):
             REQUIRE_AUTH = require_auth
 
             def _get_uri_tokens(self):
-                if implement_abstract:
-                    return ['']
-                return super(TestClass, self)._get_uri_tokens()
+                return [''] if implement_abstract else super(TestClass, self)._get_uri_tokens()
+
 
         return TestClass
 

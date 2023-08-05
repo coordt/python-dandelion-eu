@@ -15,8 +15,9 @@ class FileCache(NoCache):
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
 
-        assert os.path.isdir(self.cache_dir), \
-            "{} exists but is not a directory".format(self.cache_dir)
+        assert os.path.isdir(
+            self.cache_dir
+        ), f"{self.cache_dir} exists but is not a directory"
 
     def _get_filename_for(self, key):
         return os.path.join(self.cache_dir, key)

@@ -59,9 +59,7 @@ class DatagemManager(object):
         if '$where' not in self.params:
             self.params['$where'] = new_filter
         else:
-            self.params['$where'] = '({}) AND ({})'.format(
-                self.params['$where'], new_filter
-            )
+            self.params['$where'] = f"({self.params['$where']}) AND ({new_filter})"
 
         return self
 
@@ -118,11 +116,11 @@ class DatagemManager(object):
             return self.get()
 
         if not issubclass(type(item), slice):
-            raise TypeError("Invalid slice type: {}".format(type(item)))
+            raise TypeError(f"Invalid slice type: {type(item)}")
 
         self.params['$offset'] = item.start if item.start else 0
         self.params['$limit'] = None if item.stop is None \
-            else item.stop - self.params['$offset']
+                else item.stop - self.params['$offset']
         self._step = item.step if item.step is not None else 1
 
         if self.params['$offset'] < 0:
@@ -139,7 +137,7 @@ class DatagemManager(object):
         """
         import six
         if isinstance(value, six.string_types):
-            value = '"%s"' % value
+            value = f'"{value}"'
         if value is None:
             value = 'null'
 
@@ -162,7 +160,7 @@ class DatagemManager(object):
                 key_last_index = None
 
         key = '.'.join(tokens[:key_last_index])
-        return '{} {} {}'.format(key, operator, value)
+        return f'{key} {operator} {value}'
 
     @property
     def meta(self):
