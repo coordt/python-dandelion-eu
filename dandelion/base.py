@@ -1,25 +1,21 @@
 """ base classes
 """
-from __future__ import unicode_literals
-
-try:
-    import urlparse
-except ImportError:
-    from urllib import parse as urlparse
+from urllib import parse as urlparse
 
 from dandelion.cache.base import NoCache
 from dandelion.utils import AttributeDict
 
 
 class DandelionConfig(dict):
-    """ class for storing the default dandelion configuration, such
-     as authentication parameters
+    """class for storing the default dandelion configuration, such
+    as authentication parameters
     """
-    ALLOWED_KEYS = ['token', 'app_id', 'app_key']
+
+    ALLOWED_KEYS = ["token", "app_id", "app_key"]
 
     def __setitem__(self, key, value):
         if key not in self.ALLOWED_KEYS:
-            raise DandelionException(f'invalid config param: {key}')
+            raise DandelionException(f"invalid config param: {key}")
         super(DandelionConfig, self).__setitem__(key, value)
 
 
@@ -33,34 +29,35 @@ class DandelionException(Exception):
             self.data = dandelion_obj.data
         else:
             self.message = f"{dandelion_obj}"
-            self.code = kwargs.get('code')
-            self.data = kwargs.get('data')
+            self.code = kwargs.get("code")
+            self.data = kwargs.get("data")
         super(DandelionException, self).__init__(self.message)
 
 
 class MissingParameterException(DandelionException):
-    code = 'error.missingParameter'
+    code = "error.missingParameter"
 
     def __init__(self, param_name):
-        self.data = {'parameter': param_name}
+        self.data = {"parameter": param_name}
         super(MissingParameterException, self).__init__(
             f'Param "{param_name}" is required'
         )
 
 
-class BaseDandelionRequest(object):
-    DANDELION_HOST = 'api.dandelion.eu'
+class BaseDandelionRequest:
+    DANDELION_HOST = "api.dandelion.eu"
     REQUIRE_AUTH = True
 
     def __init__(self, **kwargs):
         import requests
         from dandelion import default_config
-        self.uri = self._get_uri(host=kwargs.get('host'))
-        self.token = kwargs.get('token', default_config.get('token'))
-        self.app_id = kwargs.get('app_id', default_config.get('app_id'))
-        self.app_key = kwargs.get('app_key', default_config.get('app_key'))
+
+        self.uri = self._get_uri(host=kwargs.get("host"))
+        self.token = kwargs.get("token", default_config.get("token"))
+        self.app_id = kwargs.get("app_id", default_config.get("app_id"))
+        self.app_key = kwargs.get("app_key", default_config.get("app_key"))
         self.requests = requests.session()
-        self.cache = kwargs.get('cache', NoCache())
+        self.cache = kwargs.get("cache", NoCache())
 
         if self.REQUIRE_AUTH and not self.token:
             if self.app_id:
@@ -71,20 +68,19 @@ class BaseDandelionRequest(object):
             else:
                 raise MissingParameterException("token")
 
-    def do_request(self, params, extra_url='', method='post', **kwargs):
+    def do_request(self, params, extra_url="", method="post", **kwargs):
         from requests import RequestException
+
         if self.REQUIRE_AUTH:
             if self.token:
-                params['token'] = self.token
+                params["token"] = self.token
             else:
-                params['$app_id'] = self.app_id
-                params['$app_key'] = self.app_key
+                params["$app_id"] = self.app_id
+                params["$app_key"] = self.app_key
 
-        url = self.uri + ''.join(f'/{x}' for x in extra_url)
+        url = self.uri + "".join(f"/{x}" for x in extra_url)
 
-        cache_key = self.cache.get_key_for(
-            url=url, params=params, method=method
-        )
+        cache_key = self.cache.get_key_for(url=url, params=params, method=method)
 
         if self.cache.contains_key(cache_key):
             response = self.cache.get(cache_key)
@@ -104,19 +100,18 @@ class BaseDandelionRequest(object):
 
     def _get_uri(self, host=None):
         base_uri = host or self.DANDELION_HOST
-        if not base_uri.startswith('http'):
-            base_uri = f'https://{base_uri}'
-        return urlparse.urljoin(
-            base_uri, '/'.join(self._get_uri_tokens())
-        )
+        if not base_uri.startswith("http"):
+            base_uri = f"https://{base_uri}"
+        return urlparse.urljoin(base_uri, "/".join(self._get_uri_tokens()))
 
     def _do_raw_request(self, url, params, method, **kwargs):
         from dandelion import __version__
-        kwargs['data' if method in ('post', 'put') else 'params'] = params
-        kwargs['url'] = url
-        kwargs['headers'] = kwargs.pop('headers', {})
-        kwargs['headers']['User-Agent'] = kwargs['headers'].get(
-            'User-Agent', f'python-dandelion-eu/{__version__}'
+
+        kwargs["data" if method in ("post", "put") else "params"] = params
+        kwargs["url"] = url
+        kwargs["headers"] = kwargs.pop("headers", {})
+        kwargs["headers"]["User-Agent"] = kwargs["headers"].get(
+            "User-Agent", f"python-dandelion-eu/{__version__}"
         )
         return getattr(self.requests, method)(**kwargs)
 

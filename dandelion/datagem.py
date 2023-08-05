@@ -1,6 +1,5 @@
 """ dandelion datagem
 """
-from __future__ import unicode_literals
 
 import warnings
 
@@ -8,8 +7,7 @@ from dandelion.base import DandelionException, BaseDandelionRequest
 
 
 class Datagem(BaseDandelionRequest):
-    """ a datagem, aka a source of data on dandelion
-    """
+    """a datagem, aka a source of data on dandelion"""
 
     def __init__(self, uid, **kwargs):
         self.uid = uid
@@ -17,12 +15,12 @@ class Datagem(BaseDandelionRequest):
         super(Datagem, self).__init__(**kwargs)
 
     def _get_uri_tokens(self):
-        return 'datagem', self.uid, 'data/v1'
+        return "datagem", self.uid, "data/v1"
 
     @property
     def version(self):
         if self._version is None:
-            self._version = self.items.meta['version']
+            self._version = self.items.meta["version"]
         return self._version
 
     @property
@@ -38,8 +36,8 @@ class Datagem(BaseDandelionRequest):
 
 
 class DatagemManager(object):
-    """ an object responsible for retrieving data form a datagem
-    """
+    """an object responsible for retrieving data form a datagem"""
+
     PAGINATE_BY = 500
 
     def __init__(self, datagem):
@@ -52,119 +50,116 @@ class DatagemManager(object):
         if not kwargs:
             return self
 
-        new_filter = ' AND '.join(
-            self._parse_single_filter(key, value)
-            for key, value in kwargs.items()
+        new_filter = " AND ".join(
+            self._parse_single_filter(key, value) for key, value in kwargs.items()
         )
-        if '$where' not in self.params:
-            self.params['$where'] = new_filter
+        if "$where" not in self.params:
+            self.params["$where"] = new_filter
         else:
-            self.params['$where'] = f"({self.params['$where']}) AND ({new_filter})"
+            self.params["$where"] = f"({self.params['$where']}) AND ({new_filter})"
 
         return self
 
     def get(self, **kwargs):
         try:
             return next(self.where(**kwargs).__iter__())
-        except StopIteration:
-            raise DandelionException('The requested item does not exist')
+        except StopIteration as e:
+            raise DandelionException("The requested item does not exist") from e
 
     def select(self, *args):
-        self.params['$select'] = ','.join(args)
-        if any(param.startswith('count(') for param in args):
-            self.params['$group'] = ','.join(
-                param for param in args if not param.startswith('count(')
+        self.params["$select"] = ",".join(args)
+        if any(param.startswith("count(") for param in args):
+            self.params["$group"] = ",".join(
+                param for param in args if not param.startswith("count(")
             )
         return self
 
     def order(self, *args):
-        self.params['$order'] = ','.join(args)
+        self.params["$order"] = ",".join(args)
         return self
 
     def __iter__(self):
-        offset = self.params.get('$offset', 0)
+        offset = self.params.get("$offset", 0)
         returned = 0
-        actual_limit = self.params.get('$limit', None)
+        actual_limit = self.params.get("$limit", None)
         while True:
             params = dict(self.params)
-            params['$limit'] = min(
-                self.PAGINATE_BY, actual_limit or self.PAGINATE_BY
-            )
-            params['$offset'] = offset
-            response = self.datagem.do_request(params, method='get')
+            params["$limit"] = min(self.PAGINATE_BY, actual_limit or self.PAGINATE_BY)
+            params["$offset"] = offset
+            response = self.datagem.do_request(params, method="get")
             self._meta = {
-                'version': response['datagem-version'],
-                'count': response['count']
+                "version": response["datagem-version"],
+                "count": response["count"],
             }
 
-            for obj in response['items']:
+            for obj in response["items"]:
                 if returned % self._step == 0:
                     yield obj
                 returned += 1
                 if actual_limit and returned >= actual_limit:
                     raise StopIteration
 
-            if len(response['items']) < self.PAGINATE_BY:
+            if len(response["items"]) < self.PAGINATE_BY:
                 raise StopIteration
             offset += self.PAGINATE_BY
 
     def __getitem__(self, item):
         if isinstance(item, int):
             if item < 0:
-                raise TypeError('Negative indexes are not supported')
-            self.params['$offset'] = item
+                raise TypeError("Negative indexes are not supported")
+            self.params["$offset"] = item
             return self.get()
 
         if not issubclass(type(item), slice):
             raise TypeError(f"Invalid slice type: {type(item)}")
 
-        self.params['$offset'] = item.start if item.start else 0
-        self.params['$limit'] = None if item.stop is None \
-                else item.stop - self.params['$offset']
+        self.params["$offset"] = item.start or 0
+        self.params["$limit"] = (
+            None if item.stop is None else item.stop - self.params["$offset"]
+        )
         self._step = item.step if item.step is not None else 1
 
-        if self.params['$offset'] < 0:
-            raise TypeError('Negative indexes are not supported')
-        if self.params['$limit'] is not None and self.params['$limit'] <= 0:
-            raise TypeError('Negative indexes are not supported')
+        if self.params["$offset"] < 0:
+            raise TypeError("Negative indexes are not supported")
+        if self.params["$limit"] is not None and self.params["$limit"] <= 0:
+            raise TypeError("Negative indexes are not supported")
         if self._step <= 0:
-            raise TypeError('Non-positive step is not supported')
+            raise TypeError("Non-positive step is not supported")
         return self
 
     @staticmethod
     def _parse_single_filter(key, value):
-        """ prepare a value for being used in the api
-        """
-        import six
-        if isinstance(value, six.string_types):
+        """prepare a value for being used in the api"""
+
+        if isinstance(value, str):
             value = f'"{value}"'
         if value is None:
-            value = 'null'
+            value = "null"
 
-        operator = '='
-        tokens = key.split('__')
+        operator = "="
+        tokens = key.split("__")
         key_last_index = None
         if len(tokens) > 1:
             key_last_index = -1
-            if tokens[-1] == 'lte':
-                operator = '<='
-            elif tokens[-1] == 'lt':
-                operator = '<'
-            elif tokens[-1] == 'gt':
-                operator = '>'
-            elif tokens[-1] == 'gte':
-                operator = '>='
-            elif tokens[-1] == 'not':
-                operator = '<>'
+            if tokens[-1] == "lte":
+                operator = "<="
+            elif tokens[-1] == "lt":
+                operator = "<"
+            elif tokens[-1] == "gt":
+                operator = ">"
+            elif tokens[-1] == "gte":
+                operator = ">="
+            elif tokens[-1] == "not":
+                operator = "<>"
             else:
                 key_last_index = None
 
-        key = '.'.join(tokens[:key_last_index])
-        return f'{key} {operator} {value}'
+        key = ".".join(tokens[:key_last_index])
+        return f"{key} {operator} {value}"
 
     @property
     def meta(self):
         if self._meta is None:
             # this will send a request and populate the metadata
-            list(self.select('acheneID')[:1])
+            list(self.select("acheneID")[:1])
         return dict(self._meta)  # return a copy of the metadata
